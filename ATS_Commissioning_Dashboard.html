@@ -222,6 +222,15 @@
         .row-header:hover {
             background: #334155;
         }
+        
+        .row-header.complete-row {
+            background: #064e3b;
+            border-left: 4px solid #10b981;
+        }
+        
+        .row-header.complete-row:hover {
+            background: #065f46;
+        }
 
         .row-title {
             font-size: 18px;
@@ -2849,37 +2858,25 @@
                 }
             }
 
-            // Convert to array and separate complete vs incomplete
-            var incompleteRows = [];
+            // Convert to array - show ALL rows
+            var allRowsArray = [];
             for (var key in allRows) {
-                var row = allRows[key];
-                var allComplete = row.units.length === 18;
-                if (allComplete) {
-                    for (var j = 0; j < row.units.length; j++) {
-                        if (getStatus(row.units[j]) !== 'complete') {
-                            allComplete = false;
-                            break;
-                        }
-                    }
-                }
-                if (!allComplete) {
-                    incompleteRows.push(row);
-                }
+                allRowsArray.push(allRows[key]);
             }
 
-            incompleteRows.sort(function(a, b) {
+            allRowsArray.sort(function(a, b) {
                 if (a.dataHall !== b.dataHall) return a.dataHall.localeCompare(b.dataHall);
                 if (a.hac !== b.hac) return a.hac - b.hac;
                 return a.row - b.row;
             });
 
             var html = '';
-            for (var i = 0; i < incompleteRows.length; i++) {
-                html += renderIncompleteRowCard(incompleteRows[i]);
+            for (var i = 0; i < allRowsArray.length; i++) {
+                html += renderIncompleteRowCard(allRowsArray[i]);
             }
 
             document.getElementById('incomplete-rows').innerHTML = html;
-            document.getElementById('incomplete-badge').textContent = incompleteRows.length;
+            document.getElementById('incomplete-badge').textContent = allRowsArray.length;
         }
 
         function renderIncompleteRowCard(row) {
@@ -2895,11 +2892,16 @@
                 else if (status === 'l4only') l4only++;
                 else missing++;
             }
+            
+            // Row is only truly complete if all 18 units exist and are complete
+            var isRowComplete = (row.units.length === 18 && complete === 18);
 
             var rowId = 'row-' + row.dataHall + '-' + row.hac + '-' + row.row;
+            
+            var headerClass = isRowComplete ? 'row-header complete-row' : 'row-header';
 
             var html = '<div class="row-card">';
-            html += '<div class="row-header" onclick="toggleRow(\'' + rowId + '\')">';
+            html += '<div class="' + headerClass + '" onclick="toggleRow(\'' + rowId + '\')">';
             html += '<div class="row-title">' + row.dataHall + ' - HAC ' + row.hac + ' - Row ' + row.row + '</div>';
             html += '<div class="row-summary">';
             if (complete > 0) html += '<div class="row-stat complete"><span class="row-stat-label">Complete:</span> <span class="row-stat-value">' + complete + '</span></div>';
