@@ -540,8 +540,8 @@
 
         <div class="section">
             <div class="section-title">
-                Incomplete Rows
-                <span class="badge warning" id="incomplete-badge">0</span>
+                All Rows
+                <span class="badge" id="incomplete-badge">0</span>
             </div>
             <div class="row-list" id="incomplete-rows"></div>
         </div>
@@ -2802,30 +2802,64 @@
         }
 
         function renderIncompleteRows(filtered) {
-            var rows = {};
-
+            // Build a map of all possible rows for the active DH filter
+            var allRows = {};
+            
+            // Determine which rows to show based on active DH
+            var startHAC = 1;
+            var endHAC = 24;
+            if (activeDH === 'DH1') {
+                startHAC = 1;
+                endHAC = 12;
+            } else if (activeDH === 'DH2') {
+                startHAC = 13;
+                endHAC = 24;
+            }
+            
+            // Initialize all rows
+            for (var h = startHAC; h <= endHAC; h++) {
+                var row1 = (h - 1) * 2 + 1;
+                var row2 = (h - 1) * 2 + 2;
+                var dh = h <= 12 ? 'DH1' : 'DH2';
+                
+                var key1 = dh + '-HAC' + h + '-R' + row1;
+                var key2 = dh + '-HAC' + h + '-R' + row2;
+                
+                allRows[key1] = {
+                    dataHall: dh,
+                    hac: h,
+                    row: row1,
+                    units: []
+                };
+                
+                allRows[key2] = {
+                    dataHall: dh,
+                    hac: h,
+                    row: row2,
+                    units: []
+                };
+            }
+            
+            // Add actual unit data to rows
             for (var i = 0; i < filtered.length; i++) {
                 var rec = filtered[i];
                 var rowKey = rec.dataHall + '-HAC' + rec.hac + '-R' + rec.row;
-                if (!rows[rowKey]) {
-                    rows[rowKey] = {
-                        dataHall: rec.dataHall,
-                        hac: rec.hac,
-                        row: rec.row,
-                        units: []
-                    };
+                if (allRows[rowKey]) {
+                    allRows[rowKey].units.push(rec);
                 }
-                rows[rowKey].units.push(rec);
             }
 
+            // Convert to array and separate complete vs incomplete
             var incompleteRows = [];
-            for (var key in rows) {
-                var row = rows[key];
-                var allComplete = true;
-                for (var j = 0; j < row.units.length; j++) {
-                    if (getStatus(row.units[j]) !== 'complete') {
-                        allComplete = false;
-                        break;
+            for (var key in allRows) {
+                var row = allRows[key];
+                var allComplete = row.units.length === 18;
+                if (allComplete) {
+                    for (var j = 0; j < row.units.length; j++) {
+                        if (getStatus(row.units[j]) !== 'complete') {
+                            allComplete = false;
+                            break;
+                        }
                     }
                 }
                 if (!allComplete) {
@@ -2840,12 +2874,8 @@
             });
 
             var html = '';
-            if (incompleteRows.length === 0) {
-                html = '<div class="no-data">No incomplete rows found</div>';
-            } else {
-                for (var i = 0; i < incompleteRows.length; i++) {
-                    html += renderIncompleteRowCard(incompleteRows[i]);
-                }
+            for (var i = 0; i < incompleteRows.length; i++) {
+                html += renderIncompleteRowCard(incompleteRows[i]);
             }
 
             document.getElementById('incomplete-rows').innerHTML = html;
