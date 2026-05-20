@@ -2752,15 +2752,16 @@
             var complete = 0;
             var l3only = 0;
             var l4only = 0;
-            var missing = 0;
 
             for (var i = 0; i < filtered.length; i++) {
                 var status = getStatus(filtered[i]);
                 if (status === 'complete') complete++;
                 else if (status === 'l3only') l3only++;
                 else if (status === 'l4only') l4only++;
-                else missing++;
             }
+            
+            // Missing Both = total units minus all units with any data
+            var missing = total - complete - l3only - l4only;
 
             var completePercent = total > 0 ? Math.round((complete / total) * 100) : 0;
 
